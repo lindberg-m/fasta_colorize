@@ -20,17 +20,23 @@ ansi_colors_fg = {
         'white' : '37'
         }
 
+ansi_prefix = '\033['
+
 color_map = {'A' : 'yellow', 'a' : 'yellow', 
              'C' : 'blue', 'c' : 'blue', 
              'G' : 'green', 'g' : 'green', 
              'T' : 'red', 't' : 'red'}
 
-nuc_remap = {x : '\033[' + ansi_colors_fg[color_map[x]] + 'm' + x for x in "ACTGactg"}
+nuc_remap = {x : ansi_prefix + ansi_colors_fg[color_map[x]] + 'm' + x for x in "ACTGactg"}
+
+def reset_char(char):
+    return ansi_prefix + '0m' + char
+
 def color_char(char):
     try:
         return nuc_remap[char]
     except KeyError:
-        return '\033[' + '0m' + char
+        return reset_char(char)
 
 def color_string(string):
     return ''.join(list(map(color_char, string)))
@@ -52,7 +58,7 @@ if __name__ == '__main__':
     for line in input_handle:
         line = line.strip()
         if line.startswith('>'):
-            print(line)
+            print(reset_char(line))
         else:
             print(color_string(line))
 
