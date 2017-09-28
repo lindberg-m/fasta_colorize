@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from sys import argv, stdin, exit
+
 usage = """Colorize the nucleotides in a fasta file
 
     usage: fasta_colorize [-h] [infile]
@@ -7,15 +9,6 @@ usage = """Colorize the nucleotides in a fasta file
         infile   Path to fasta file, reads from stdin if ommited
 """
 
-"""
-Colorize fastasequences
-
-"""
-from sys import argv, stdin, exit
-from termcolor import colored
-
-ansi_color_prefix = '\033['
-ansi_color_suffix = 'm'
 ansi_colors_fg = {
         'black' : '30',
         'red' : '31',
@@ -32,16 +25,14 @@ color_map = {'A' : 'yellow', 'a' : 'yellow',
              'G' : 'green', 'g' : 'green', 
              'T' : 'red', 't' : 'red'}
 
-nuc_remap = {x : ansi_color_prefix + ansi_colors_fg[color_map[x]] + ansi_color_suffix + x for x in "ACTGactg"}
-
+nuc_remap = {x : '\033[' + ansi_colors_fg[color_map[x]] + 'm' + x for x in "ACTGactg"}
 def color_char(char):
     try:
         return nuc_remap[char]
     except KeyError:
-        return char
+        return '\033[' + '0m' + char
 
 def color_string(string):
-    """foo"""
     return ''.join(list(map(color_char, string)))
 
 if __name__ == '__main__':
