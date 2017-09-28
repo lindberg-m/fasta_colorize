@@ -9,37 +9,60 @@ usage = """Colorize the nucleotides in a fasta file
         infile   Path to fasta file, reads from stdin if ommited
 """
 
-ansi_colors_fg = {
-        'black' : '30',
-        'red' : '31',
-        'green' : '32',
-        'yellow' : '33',
-        'blue' : '34',
-        'magenta' : '35',
-        'cyan' : '36',
-        'white' : '37'
-        }
+class SeqColor(object):
+   ansi_prefix = '\033['
+   reset_code = '0m'
 
-ansi_prefix = '\033['
+   BLACK = '30'
+   RED = '31'
+   GREEN = '32'
+   YELLOW = '33'
+   BLUE = '34'
+   MAGENTA = '35'
+   CYAN = '36'
+   WHITE = '37'
+   
+   ADENINE = (['a', 'A'], YELLOW)
+   CYTOSINE = (['c', 'C'], GREEN)
+   GUANINE = (['g', 'G'], MAGENTA)
+   THYMINE = (['t', 'T'], RED)
 
-color_map = {'A' : 'yellow', 'a' : 'yellow', 
-             'C' : 'blue', 'c' : 'blue', 
-             'G' : 'green', 'g' : 'green', 
-             'T' : 'red', 't' : 'red'}
+   nuc_map = {}
+   for nuc_codes, color in [ADENINE, CYTOSINE, GUANINE, THYMINE]:
+       for code in nuc_codes:
+           nuc_map[code] = color
 
-nuc_remap = {x : ansi_prefix + ansi_colors_fg[color_map[x]] + 'm' + x for x in "ACTGactg"}
+   def __init__(self):
+       self.color_code = self.ansi_prefix + self.reset_code
+       self.on_reset = True
 
-def reset_char(char):
-    return ansi_prefix + '0m' + char
+   def colorize_char(self, char):
+       return self.color_code + char
 
-def color_char(char):
-    try:
-        return nuc_remap[char]
-    except KeyError:
-        return reset_char(char)
+   def set_color_code(self, char):
+       try:
+           self.color_code = self.ansi_prefix + self.nuc_map[char] + 'm'
+           self.on_reset = False
+       except KeyError:
+           if self.on_reset:
+               self.color_code = ''
+           else:
+               self.color_code = self.ansi_prefix + self.reset_code
+               self.on_reset = True
 
-def color_string(string):
-    return ''.join(list(map(color_char, string)))
+   def colorize_string(self, string):
+       ret = []
+       for char in string:
+           self.set_color_code(char)
+           ret.append(self.colorize_char(char))
+
+       return ''.join(ret)
+
+   def reset_color(self, char):
+       self.color_code = self.ansi_prefix + self.reset_code
+       self.on_reset = True
+       return self.ansi_prefix + self.reset_code + char
+   
 
 if __name__ == '__main__':
     try:
@@ -55,12 +78,13 @@ if __name__ == '__main__':
         input_handle = stdin
         close = lambda x: None
 
+    colorizer = SeqColor()
     for line in input_handle:
         line = line.strip()
         if line.startswith('>'):
-            print(reset_char(line))
+            print(colorizer.reset_color(line))
         else:
-            print(color_string(line))
+            print(colorizer.colorize_string(line))
 
     close(input_handle)
 
